@@ -75,10 +75,7 @@ class RegisterForm(ui.Modal, title='RoboEpics register form'):
             await interaction.user.send(f"Thanks for your registration in RoboEpics, {self.full_name}! Please check your email as we've sent you a verification link.")
         elif response.status_code == 400:
             response = response.json()
-            if type(response) == dict:
-                await interaction.user.send('\n'.join(('%s:\n\t%s' % (field, '\n\t'.join(errors)) for field, errors in response.items())))
-            else:
-                await interaction.user.send('\n\t'.join(response))
+            await interaction.user.send('\n'.join(('%s:\n\t%s' % (field, '\n\t'.join(errors)) for field, errors in response.items())))
         else:
             await interaction.user.send('There was a problem with your registration! Please try again later.')
 
