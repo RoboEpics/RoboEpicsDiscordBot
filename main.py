@@ -9,6 +9,8 @@ from discord import ui
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 ROBOEPICS_GUILD = discord.Object(os.getenv('GUILD_ID') or 683685547893325829)  # Default value is the test guild
 ROBOEPICS_API = os.getenv('ROBOEPICS_API') or 'https://api.roboepics.com'
+ROBOEPICS_SUPERUSER_USERNAME = os.getenv('ROBOEPICS_SUPERUSER_USERNAME')
+ROBOEPICS_SUPERUSER_PASSWORD = os.getenv('ROBOEPICS_SUPERUSER_PASSWORD')
 LOG_PATH = os.getenv('LOG_PATH') or 'discord.log'
 
 handler = logging.FileHandler(filename=LOG_PATH, encoding='utf-8', mode='w')
@@ -38,15 +40,29 @@ class RegisterForm(ui.Modal, title='RoboEpics register form'):
         # Inform Discord that the response will be delayed since the registration request might take some time
         await interaction.response.defer()
 
+        # Login to RoboEpics using the superuser credentials so that we can register the user with tags
+        response = requests.post(ROBOEPICS_API + '/account/login', {
+            'username': ROBOEPICS_SUPERUSER_USERNAME,
+            'password': ROBOEPICS_SUPERUSER_PASSWORD
+        })
+
+        # Handle the login request result
+        if not response.ok:
+            await interaction.user.send('There was a problem with your request! Please try again later.')
+            return
+
+        # Extract access token from the login response
+        token = response.json()['token']
+
         # Send the registration request
         response = requests.post(ROBOEPICS_API + '/account/register', json={
-            'full_name': self.full_name,
-            'username': self.username,
-            'email': self.email,
-            'password': self.password,
+            'full_name': str(self.full_name),
+            'username': str(self.username),
+            'email': str(self.email),
+            'password': str(self.password),
             'discord_user_id': interaction.user.id,
             'tags': ['discord']
-        })
+        }, headers={'Authorization': 'Bearer ' + token})
 
         # Send a delayed follow-up response in the guild but only to the user
         await interaction.followup.send(
@@ -58,7 +74,11 @@ class RegisterForm(ui.Modal, title='RoboEpics register form'):
         if response.ok:
             await interaction.user.send(f"Thanks for your registration in RoboEpics, {self.full_name}! Please check your email as we've sent you a verification link.")
         elif response.status_code == 400:
-            await interaction.user.send('\n'.join(('%s:\n\t%s' % (field, '\n\t'.join(errors)) for field, errors in response.json().items())))
+            response = response.json()
+            if type(response) == dict:
+                await interaction.user.send('\n'.join(('%s:\n\t%s' % (field, '\n\t'.join(errors)) for field, errors in response.items())))
+            else:
+                await interaction.user.send('\n\t'.join(response))
         else:
             await interaction.user.send('There was a problem with your registration! Please try again later.')
 
@@ -83,7 +103,7 @@ class LoginForm(ui.Modal, title='RoboEpics login form'):
         # Handle the login request result
         if response.ok:
             # Extract access token from the login response
-            token = response.json()['access_token']
+            token = response.json()['token']
 
             # Set user's Discord ID in profile
             response = requests.patch(ROBOEPICS_API + '/profile', {'discord_user_id': interaction.user.id}, headers={'Authorization': 'Bearer ' + token})
