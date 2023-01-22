@@ -103,7 +103,7 @@ class LoginForm(ui.Modal, title='RoboEpics login form'):
             token = response.json()['token']
 
             # Set user's Discord ID in profile
-            response = requests.patch(ROBOEPICS_API + '/profile', {'discord_user_id': interaction.user.id}, headers={'Authorization': 'Bearer ' + token})
+            response = requests.patch(ROBOEPICS_API + '/account/profile', {'discord_user_id': interaction.user.id}, headers={'Authorization': 'Bearer ' + token})
             if response.ok:
                 await interaction.user.send('Your Discord user is successfully connected to your RoboEpics user!')
             else:
