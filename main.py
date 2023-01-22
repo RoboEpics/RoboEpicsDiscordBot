@@ -39,7 +39,7 @@ class RegisterForm(ui.Modal, title='RoboEpics register form'):
         await interaction.response.defer()
 
         # Send the registration request
-        response = requests.post(ROBOEPICS_API + '/account/register', {
+        response = requests.post(ROBOEPICS_API + '/account/register', json={
             'full_name': self.full_name,
             'username': self.username,
             'email': self.email,
