@@ -6,7 +6,7 @@ import requests
 import discord
 from discord import ui
 
-BOT_TOKEN = os.getenv('TOKEN')
+BOT_TOKEN = os.getenv('BOT_TOKEN')
 ROBOEPICS_GUILD = discord.Object(os.getenv('GUILD_ID') or 683685547893325829)  # Default value is the test guild
 ROBOEPICS_API = os.getenv('ROBOEPICS_API') or 'https://api.roboepics.com'
 LOG_PATH = os.getenv('LOG_PATH') or 'discord.log'
