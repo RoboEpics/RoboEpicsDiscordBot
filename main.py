@@ -5,6 +5,7 @@ import requests
 
 import discord
 from discord import ui
+from discord.utils import get
 
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 ROBOEPICS_GUILD = discord.Object(os.getenv('GUILD_ID') or 683685547893325829)  # Default value is the test guild
@@ -37,8 +38,11 @@ class RegisterForm(ui.Modal, title='RoboEpics register form'):
     password = ui.TextInput(label='Password')
 
     async def on_submit(self, interaction: discord.Interaction):
-        # Inform Discord that the response will be delayed since the registration request might take some time
-        await interaction.response.defer()
+        # Send a response in the guild but only to the user
+        await interaction.response.send_message(
+            f'Your registration form has been submitted, {self.full_name}! Please check your direct messages in a moment for confirmation.',
+            ephemeral=True
+        )
 
         # Login to RoboEpics using the superuser credentials so that we can register the user with tags
         response = requests.post(ROBOEPICS_API + '/account/login', {
@@ -64,18 +68,12 @@ class RegisterForm(ui.Modal, title='RoboEpics register form'):
             'tags': ['discord']
         }, headers={'Authorization': 'Bearer ' + token})
 
-        # Send a delayed follow-up response in the guild but only to the user
-        await interaction.followup.send(
-            f'Your registration form has been submitted, {self.full_name}! Please check your direct messages for confirmation.',
-            ephemeral=True
-        )
-
         # Handle the registration request result
         if response.ok:
-            await interaction.user.send(f"Thanks for your registration in RoboEpics, {self.full_name}! Please check your email as we've sent you a verification link.")
+            await interaction.user.add_roles(get(interaction.guild.roles, name="Connected"))
+            await interaction.user.send(f"Thanks for your registration in RoboEpics, {self.full_name}! Please check your email as we've sent you a verification link. Also you now have access to the channels.")
         elif response.status_code == 400:
-            response = response.json()
-            await interaction.user.send('\n'.join(('%s:\n\t%s' % (field, '\n\t'.join(errors)) for field, errors in response.items())))
+            await interaction.user.send('\n'.join(('%s:\n\t%s' % (field, '\n\t'.join(errors)) for field, errors in response.json().items())))
         else:
             await interaction.user.send('There was a problem with your registration! Please try again later.')
 
@@ -87,7 +85,7 @@ class LoginForm(ui.Modal, title='RoboEpics login form'):
     async def on_submit(self, interaction: discord.Interaction):
         # Send a confirmation response in the guild but only to the user
         await interaction.response.send_message(
-            f'Discord user connection request has been submitted! Please check your direct messages for confirmation.',
+            f'Discord user connection request has been submitted! Please check your direct messages in a moment for confirmation.',
             ephemeral=True
         )
 
@@ -105,7 +103,10 @@ class LoginForm(ui.Modal, title='RoboEpics login form'):
             # Set user's Discord ID in profile
             response = requests.patch(ROBOEPICS_API + '/account/profile', json={'discord_user_id': interaction.user.id}, headers={'Authorization': 'Bearer ' + token})
             if response.ok:
-                await interaction.user.send('Your Discord user is successfully connected to your RoboEpics user!')
+                await interaction.user.add_roles(get(interaction.guild.roles, name="Connected"))
+                await interaction.user.send('Your Discord user is successfully connected to your RoboEpics user! Now you have access to the channels.')
+            elif response.status_code == 400:
+                await interaction.user.send('\n'.join(('%s:\n\t%s' % (field, '\n\t'.join(errors)) for field, errors in response.json().items())))
             else:
                 await interaction.user.send('There was a problem with your request! Please try again later.')
         elif response.status_code == 400:
