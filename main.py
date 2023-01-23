@@ -35,7 +35,7 @@ class RegisterForm(ui.Modal, title='RoboEpics register form'):
     full_name = ui.TextInput(label='Full Name')
     username = ui.TextInput(label='Username')
     email = ui.TextInput(label='Email')
-    password = ui.TextInput(label='Password')
+    password = ui.TextInput(label='New Password')
 
     async def on_submit(self, interaction: discord.Interaction):
         # Send a response in the guild but only to the user
@@ -79,8 +79,8 @@ class RegisterForm(ui.Modal, title='RoboEpics register form'):
 
 
 class LoginForm(ui.Modal, title='RoboEpics login form'):
-    username = ui.TextInput(label='Username')
-    password = ui.TextInput(label='Password')
+    username = ui.TextInput(label='RoboEpics Username')
+    password = ui.TextInput(label='RoboEpics Password')
 
     async def on_submit(self, interaction: discord.Interaction):
         # Send a confirmation response in the guild but only to the user
