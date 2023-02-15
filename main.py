@@ -132,7 +132,7 @@ async def connect(interaction: discord.Interaction):
 async def whois(interaction: discord.Interaction, discord_user: discord.Member):
     response = requests.get(ROBOEPICS_API + '/account/users/discord/' + str(discord_user.id))
     if response.ok:
-        await interaction.response.send_message('Username: %(username)s\nProfile URL: https://roboepics.com/user/%(username)s' % response.json())
+        await interaction.response.send_message('Username: %(username)s\nProfile URL: https://roboepics.com/users/%(username)s' % response.json())
     else:
         await interaction.response.send_message('No user was found that is connected to this Discord user!', ephemeral=True)
 
